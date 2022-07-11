@@ -79,11 +79,12 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Post $post)
     {
-        $post = Post::find($id);
+
         $categories= Category::all();
-        return view('admin.posts.edit', compact('post','categories'));
+        $tags= Tag::all();
+        return view('admin.posts.edit', compact('post','categories','tags'));
 
     }
 
@@ -94,11 +95,21 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Post $post)
+    public function update(PostRequest $request, Post $post)
     {
         $data = $request->all();
 
+        if($data['title'] != $post->title){
+            $data['slug']= Post::generateSlug($data['title']);
+        }
+
         $post->update($data);
+
+        if (array_key_exists('tags',$data)) {
+            $post->tags()->sync($data['tags']);
+        }else{
+            $post->tags()->detach();
+        }
 
         return redirect()->route('admin.posts.index', $post);
     }
